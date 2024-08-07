@@ -78,8 +78,19 @@ void printFrame(CAN_FRAME *message)
     }
     Serial.println();
 }
+
+static void debug_println(char *msg)
+{
+    Serial.println(msg);
+}
+static void debug_print(char *msg)
+{
+    Serial.print(msg);
+}
 #else
 #define printFrame(*message) do {} while(0)
+#define debug_println(msg) do {} while(0)
+#define debug_print(msg) do {} while(0)
 #endif
 
 
@@ -92,9 +103,7 @@ bool copyDataToBuffer(CAN_FRAME *canData, byte lineNumber){
         }
         return true;
     }else{
-#ifdef DEBUG
-        Serial.println("Message dropped, wrong length");
-#endif              
+        debug_println("Message dropped, wrong length");
         return false;
     }
 }
@@ -160,10 +169,10 @@ String processSmtCommands(char *smtCmd){
     String returnToSmt = String();
     String sFilter = String();
     uint32_t filter = 0;
-#ifdef DEBUG    
-    Serial.print("smtCmd: ");
-    Serial.println(smtCmd);
-#endif
+
+    debug_print("smtCmd: ");
+    debug_println(smtCmd);
+
     //wait for at-commands (ELM327) or st-commands (ST1110)
     if (!strncmp(smtCmd, "at", 2) || !strncmp(smtCmd, "st", 2)){
         if(!strncmp(smtCmd, "atma", 4) || !strncmp(smtCmd, "stm", 3)){//data polling
@@ -188,20 +197,16 @@ String processSmtCommands(char *smtCmd){
             if(noFilter){ 
                 memset(ids, 0x00, sizeof(ids)); //if there no filters, all IDs are allowed. But we need only one => disallow all and allow one
                 noFilter = false; //no filtes at all
-#ifdef DEBUG
-            Serial.println("No IDs are allowed now");
-#endif
+                debug_println("No IDs are allowed now");
             }
-#ifdef DEBUG
-            Serial.print("New filter from SMT: ");
-            Serial.println(filter, HEX);  
-#endif
+            debug_print("New filter from SMT: ");
+            debug_println(filter, HEX);  
+
             ids[filter] = 0x01; //it will work until other bits in CAN-ID settings are not defined
             returnToSmt.concat("OK");
         }else if(!strncmp(smtCmd, "stfcp", 5)){
-#ifdef DEBUG
-            Serial.println("Clear all filters = allow all IDs!");
-#endif
+            debug_println("Clear all filters = allow all IDs!");
+
             memset(ids, 0x01, sizeof(ids)); //clear all filters = allow all IDs. It will work until other bits in CAN-ID settings are not defined
             noFilter = true; //no filtes at all
             returnToSmt.concat("OK");
@@ -219,10 +224,10 @@ String processSmtCommands(char *smtCmd){
 
 void processBtMessage(){
     String responseToBt = processSmtCommands(buffer);
-#ifdef DEBUG
-    Serial.println("BT out message: ");
-    Serial.println(responseToBt);
-#endif
+
+    debug_println("BT out message: ");
+    debug_println(responseToBt);
+
     SerialBT.print(responseToBt); //send String to BT
 }
 
