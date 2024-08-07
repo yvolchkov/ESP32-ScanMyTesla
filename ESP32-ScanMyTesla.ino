@@ -163,6 +163,39 @@ void canLoop(){
 #endif
 }
 
+typedef String (*handler_fn) ();
+struct cmd_handler {
+    String cmd_str_id;
+    handler_fn handler;
+};
+
+String atma_stm_handler()
+{
+
+}
+
+String atma_stfap_handler()
+{
+
+}
+
+const Vector<struct cmd_handler> handlers = {
+    {.cmd_str_id = "atma", .handler = atma_stm_handler},
+    {.cmd_str_id = "stm", .handler = atma_stm_handler},
+    {.cmd_str_id = "stfap", .handler = stfap_handler},
+}
+
+String processSmtCommands(char *smtCmd){
+    String cmd = String(smtCmd);
+    for (auto it = begin (handlers); it != end (handlers); ++it) {
+        if (cmd.compare(0, it.cmd_str_id.length(), it.cmd_str_id))
+            continue;
+        
+        return it.handler();
+    }
+}
+
+
 String processSmtCommands(char *smtCmd){
     //a lot of string manipulation to cut filter ID from SMT message. Any better ideas?
     String cmd = String(smtCmd);
