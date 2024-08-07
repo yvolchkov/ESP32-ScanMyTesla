@@ -174,48 +174,52 @@ String processSmtCommands(char *smtCmd){
     debug_println(smtCmd);
 
     //wait for at-commands (ELM327) or st-commands (ST1110)
-    if (!strncmp(smtCmd, "at", 2) || !strncmp(smtCmd, "st", 2)){
-        if(!strncmp(smtCmd, "atma", 4) || !strncmp(smtCmd, "stm", 3)){//data polling
-            //send response here
-            for(byte i = 0; i < BUFFER_LENGTH; i++){
-                if(canDataBufferLength[i] > 0){
-                    if(canDataBufferId[i] < 256) returnToSmt.concat("0"); //make id 3 hex digit long
-                    if(canDataBufferId[i] < 16) returnToSmt.concat("0"); //make id 2 hex digit long
-                    returnToSmt.concat(String(canDataBufferId[i], HEX));
-                    for(byte l = 0; l < canDataBufferLength[i]; l++){
-                        if(canDataBuffer[i][l] < 16) returnToSmt.concat("0"); //make data 2 digits long
-                        returnToSmt.concat(String(canDataBuffer[i][l], HEX));
-                    }
-                returnToSmt.concat(lineEnd);
-                }
-            }
-        }else if(!strncmp(smtCmd, "stfap ", 6)){//e.g. "stfap 3d2,7ff", we need 3d2, first charachters 6 and 3 length: 3d2
-            
-            sFilter = cmd.substring(9,6); //why 9,6?!? it should be 6,3!! 
-            const char * chCmd = sFilter.c_str(); //HEX string (3d2)
-            filter = strtol(chCmd, 0, 16); //convert HEX string to integer (978)
-            if(noFilter){ 
-                memset(ids, 0x00, sizeof(ids)); //if there no filters, all IDs are allowed. But we need only one => disallow all and allow one
-                noFilter = false; //no filtes at all
-                debug_println("No IDs are allowed now");
-            }
-            debug_print("New filter from SMT: ");
-            debug_println(filter, HEX);  
-
-            ids[filter] = 0x01; //it will work until other bits in CAN-ID settings are not defined
-            returnToSmt.concat("OK");
-        }else if(!strncmp(smtCmd, "stfcp", 5)){
-            debug_println("Clear all filters = allow all IDs!");
-
-            memset(ids, 0x01, sizeof(ids)); //clear all filters = allow all IDs. It will work until other bits in CAN-ID settings are not defined
-            noFilter = true; //no filtes at all
-            returnToSmt.concat("OK");
-        }else{
-            //all other at* commands, we don't care, send "OK"...
-            returnToSmt.concat("OK");
-        }
-        returnToSmt.concat(">");
+    if (strncmp(smtCmd, "at", 2) && strncmp(smtCmd, "st", 2)) {
+        return String("OK\n");
     }
+
+
+    if(!strncmp(smtCmd, "atma", 4) || !strncmp(smtCmd, "stm", 3)){//data polling
+        //send response here
+        for(byte i = 0; i < BUFFER_LENGTH; i++){
+            if(canDataBufferLength[i] > 0){
+                if(canDataBufferId[i] < 256) returnToSmt.concat("0"); //make id 3 hex digit long
+                if(canDataBufferId[i] < 16) returnToSmt.concat("0"); //make id 2 hex digit long
+                returnToSmt.concat(String(canDataBufferId[i], HEX));
+                for(byte l = 0; l < canDataBufferLength[i]; l++){
+                    if(canDataBuffer[i][l] < 16) returnToSmt.concat("0"); //make data 2 digits long
+                    returnToSmt.concat(String(canDataBuffer[i][l], HEX));
+                }
+            returnToSmt.concat(lineEnd);
+            }
+        }
+    }else if(!strncmp(smtCmd, "stfap ", 6)){//e.g. "stfap 3d2,7ff", we need 3d2, first charachters 6 and 3 length: 3d2
+        
+        sFilter = cmd.substring(9,6); //why 9,6?!? it should be 6,3!! 
+        const char * chCmd = sFilter.c_str(); //HEX string (3d2)
+        filter = strtol(chCmd, 0, 16); //convert HEX string to integer (978)
+        if(noFilter){ 
+            memset(ids, 0x00, sizeof(ids)); //if there no filters, all IDs are allowed. But we need only one => disallow all and allow one
+            noFilter = false; //no filtes at all
+            debug_println("No IDs are allowed now");
+        }
+        debug_print("New filter from SMT: ");
+        debug_println(filter, HEX);  
+
+        ids[filter] = 0x01; //it will work until other bits in CAN-ID settings are not defined
+        returnToSmt.concat("OK");
+    }else if(!strncmp(smtCmd, "stfcp", 5)){
+        debug_println("Clear all filters = allow all IDs!");
+
+        memset(ids, 0x01, sizeof(ids)); //clear all filters = allow all IDs. It will work until other bits in CAN-ID settings are not defined
+        noFilter = true; //no filtes at all
+        returnToSmt.concat("OK");
+    }else{
+        //all other at* commands, we don't care, send "OK"...
+        returnToSmt.concat("OK");
+    }
+    returnToSmt.concat(">");
+
     returnToSmt.concat(lineEnd); //always send "NewLine" at the end
     
     return returnToSmt;  
