@@ -78,6 +78,8 @@ void printFrame(CAN_FRAME *message)
     }
     Serial.println();
 }
+#else
+#define printFrame(*message) do {} while(0)
 #endif
 
 
@@ -135,9 +137,7 @@ void canLoop(){
 #else
 //real can data
     if (CAN0.read(canMessage)) {
-#ifdef DEBUG
     printFrame(&canMessage); //print ony real messages, not a simulation
-#endif //DEBUG
 #endif //DATA_SIMULATION
         if(getBit(ids[canMessage.id], CAN_ID_BIT_RELEVANT)){ //check if this ID relevant for us
 //            Serial.print("Relevant ID received: ");
